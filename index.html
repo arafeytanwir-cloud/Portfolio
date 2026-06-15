@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>M.Rafey Tanweer — Developer</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        background: #0a0a0f;
+        color: #e8e8e6;
+        font-family: "Space Grotesk", sans-serif;
+        overflow-x: hidden;
+        min-height: 100vh;
+      }
+
+      /* ─── Canvas Background ───────────────────────────── */
+      #bg {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      /* ─── Noise Overlay ──────────────────────────────── */
+      .noise {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        opacity: 0.04;
+        background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
+      /* ─── Vignette ───────────────────────────────────── */
+      .vignette {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background: radial-gradient(
+          ellipse at center,
+          transparent 0%,
+          transparent 40%,
+          rgba(10, 10, 15, 0.6) 100%
+        );
+      }
+
+      /* ─── Hero ───────────────────────────────────────── */
+      .hero {
+        position: relative;
+        z-index: 2;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 2rem;
+      }
+      .hero-badge {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #c8f04a;
+        border: 1px solid rgba(200, 240, 74, 0.3);
+        padding: 0.4rem 1rem;
+        border-radius: 100px;
+        margin-bottom: 2rem;
+        animation: fadeInUp 0.8s ease both;
+      }
+      .hero h1 {
+        font-size: clamp(3rem, 10vw, 7rem);
+        font-weight: 700;
+        line-height: 0.95;
+        letter-spacing: -0.03em;
+        margin-bottom: 1rem;
+        animation: fadeInUp 0.8s ease 0.1s both;
+      }
+      .hero h1 span {
+        display: block;
+        background: linear-gradient(
+          135deg,
+          #e8e8e6 0%,
+          #8a8a92 50%,
+          #c8f04a 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .hero-sub {
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        color: #6a6a72;
+        letter-spacing: 0.08em;
+        margin-bottom: 3rem;
+        animation: fadeInUp 0.8s ease 0.2s both;
+      }
+      .hero-cta {
+        display: flex;
+        gap: 1rem;
+        animation: fadeInUp 0.8s ease 0.3s both;
+      }
+      .btn {
+        font-family: "Space Mono", monospace;
+        font-size: 0.75rem;
+        letter-spacing: 0.06em;
+        text-decoration: none;
+        padding: 0.8rem 1.8rem;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: none;
+      }
+      .btn-primary {
+        background: #c8f04a;
+        color: #0a0a0f;
+        font-weight: 700;
+      }
+      .btn-primary:hover {
+        background: #d9ff5a;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(200, 240, 74, 0.2);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: #9a9ba3;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .btn-ghost:hover {
+        border-color: rgba(200, 240, 74, 0.4);
+        color: #c8f04a;
+      }
+
+      /* ─── Scroll Indicator ───────────────────────────── */
+      .scroll-hint {
+        position: absolute;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        animation: fadeInUp 0.8s ease 0.5s both;
+      }
+      .scroll-hint span {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: #4a4a52;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+      }
+      .scroll-line {
+        width: 1px;
+        height: 40px;
+        background: linear-gradient(to bottom, #c8f04a, transparent);
+        animation: scrollPulse 2s ease-in-out infinite;
+      }
+
+      /* ─── Section Divider ────────────────────────────── */
+      .section-divider {
+        position: relative;
+        z-index: 2;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(200, 240, 74, 0.2),
+          transparent
+        );
+        margin: 0 10%;
+      }
+
+      /* ─── Projects Section ───────────────────────────── */
+      .section {
+        position: relative;
+        z-index: 2;
+        padding: 8rem 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .section-header {
+        display: flex;
+        align-items: baseline;
+        gap: 1rem;
+        margin-bottom: 4rem;
+      }
+      .section-num {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: #c8f04a;
+        letter-spacing: 0.1em;
+      }
+      .section-title {
+        font-size: clamp(1.5rem, 4vw, 2.5rem);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+
+      /* ─── Project Cards ──────────────────────────────── */
+      .projects-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+      }
+      .project-card {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s ease;
+        cursor: pointer;
+      }
+      .project-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(200, 240, 74, 0.4),
+          transparent
+        );
+        opacity: 0;
+        transition: opacity 0.4s ease;
+      }
+      .project-card:hover {
+        border-color: rgba(200, 240, 74, 0.15);
+        background: rgba(255, 255, 255, 0.04);
+        transform: translateY(-4px);
+      }
+      .project-card:hover::before {
+        opacity: 1;
+      }
+      .project-card .card-num {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        color: #4a4a52;
+        letter-spacing: 0.1em;
+        margin-bottom: 1rem;
+      }
+      .project-card h3 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.01em;
+      }
+      .project-card p {
+        font-size: 0.85rem;
+        color: #7a7a82;
+        line-height: 1.7;
+        margin-bottom: 1.5rem;
+      }
+      .project-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+      .project-tags span {
+        font-family: "Space Mono", monospace;
+        font-size: 0.6rem;
+        padding: 0.25rem 0.6rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #6a6a72;
+        border-radius: 3px;
+      }
+      .project-link {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        width: 32px;
+        height: 32px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6a6a72;
+        text-decoration: none;
+        font-size: 0.8rem;
+        transition: all 0.3s ease;
+      }
+      .project-link:hover {
+        border-color: #c8f04a;
+        color: #c8f04a;
+        background: rgba(200, 240, 74, 0.05);
+      }
+
+      /* ─── About Section ──────────────────────────────── */
+      .about-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        align-items: start;
+      }
+      .about-text p {
+        font-size: 1.05rem;
+        line-height: 1.8;
+        color: #9a9ba3;
+        margin-bottom: 1.5rem;
+      }
+      .about-text .highlight {
+        color: #e8e8e6;
+      }
+      .about-skills {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+      .skill-item {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 8px;
+        padding: 1.2rem;
+        transition: all 0.3s ease;
+      }
+      .skill-item:hover {
+        border-color: rgba(200, 240, 74, 0.2);
+        background: rgba(200, 240, 74, 0.03);
+      }
+      .skill-item .skill-name {
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        color: #c8f04a;
+        margin-bottom: 0.3rem;
+        letter-spacing: 0.05em;
+      }
+      .skill-item .skill-desc {
+        font-size: 0.8rem;
+        color: #6a6a72;
+      }
+
+      /* ─── Contact Section ────────────────────────────── */
+      .contact-section {
+        text-align: center;
+        padding: 8rem 2rem;
+      }
+      .contact-section h2 {
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        font-weight: 700;
+        margin-bottom: 1rem;
+        letter-spacing: -0.02em;
+      }
+      .contact-section p {
+        font-family: "Space Mono", monospace;
+        font-size: 0.85rem;
+        color: #6a6a72;
+        margin-bottom: 2rem;
+      }
+      .contact-email {
+        font-family: "Space Mono", monospace;
+        font-size: 1rem;
+        color: #c8f04a;
+        text-decoration: none;
+        border-bottom: 1px solid rgba(200, 240, 74, 0.3);
+        padding-bottom: 0.2rem;
+        transition: all 0.3s ease;
+      }
+      .contact-email:hover {
+        border-color: #c8f04a;
+      }
+      .socials {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-top: 3rem;
+      }
+      .socials a {
+        color: #4a4a52;
+        text-decoration: none;
+        font-family: "Space Mono", monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.08em;
+        transition: color 0.3s ease;
+      }
+      .socials a:hover {
+        color: #c8f04a;
+      }
+
+      /* ─── Footer ─────────────────────────────────────── */
+      .footer {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        padding: 3rem 2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .footer p {
+        font-family: "Space Mono", monospace;
+        font-size: 0.65rem;
+        color: #3a3a42;
+        letter-spacing: 0.1em;
+      }
+
+      /* ─── Animations ─────────────────────────────────── */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes scrollPulse {
+        0%,
+        100% {
+          opacity: 0.3;
+          transform: scaleY(0.6);
+        }
+        50% {
+          opacity: 1;
+          transform: scaleY(1);
+        }
+      }
+
+      /* ─── Scroll Reveal ──────────────────────────────── */
+      .reveal {
+        opacity: 0;
+        transform: translateY(40px);
+        transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .reveal.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* ─── Responsive ─────────────────────────────────── */
+      @media (max-width: 768px) {
+        .about-content {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+        }
+        .projects-grid {
+          grid-template-columns: 1fr;
+        }
+        .hero-cta {
+          flex-direction: column;
+        }
+      }
+    </style>
+    <base target="_blank" />
+  </head>
+  <body>
+    <canvas id="bg"></canvas>
+    <div class="noise"></div>
+    <div class="vignette"></div>
+
+    <!-- ═══════ HERO ═══════ -->
+    <section class="hero">
+      <div class="hero-badge">Full-Stack Developer & AI Integrator</div>
+      <h1>
+        <span>M. Rafey</span>
+        <span>Tanweer</span>
+      </h1>
+      <p class="hero-sub">Lahore, Pakistan · Building things that ship</p>
+      <div class="hero-cta">
+        <a href="#projects" class="btn btn-primary">View Projects</a>
+        <a href="#contact" class="btn btn-ghost">Get in Touch</a>
+      </div>
+      <div class="scroll-hint">
+        <span>Scroll</span>
+        <div class="scroll-line"></div>
+      </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- ═══════ PROJECTS ═══════ -->
+    <section class="section" id="projects">
+      <div class="section-header reveal">
+        <span class="section-num">01</span>
+        <h2 class="section-title">Selected Work</h2>
+      </div>
+      <div class="projects-grid">
+        <div class="project-card reveal">
+          <div class="card-num">PROJECT 01</div>
+          <h3>AI-Visualizer</h3>
+          <p>
+            Upload a PDF or type any topic — AI structures it into interactive
+            3D visualizations. Force-directed knowledge graphs, timelines,
+            hierarchies, and flow diagrams powered by Gemini + Three.js.
+          </p>
+          <div class="project-tags">
+            <span>Next.js</span><span>TypeScript</span><span>Three.js</span
+            ><span>R3F</span><span>Gemini API</span><span>PDF Parse</span>
+          </div>
+          <a
+            href="https://ai-visualizer-ver2.vercel.app/"
+            target="_blank"
+            class="project-link"
+            >↗</a
+          >
+        </div>
+        <div class="project-card reveal">
+          <div class="card-num">PROJECT 02</div>
+          <h3>PDF Q&A</h3>
+          <p>
+            Document intelligence engine. Two-panel chat UI, source attribution,
+            semantic chunking. Designed in Figma first, then built.
+          </p>
+          <div class="project-tags">
+            <span>React</span><span>FastAPI</span><span>Cohere API</span
+            ><span>PyPDF</span><span>Tailwind</span>
+          </div>
+          <a
+            href="https://pdf-qa-production.up.railway.app/"
+            target="_blank"
+            class="project-link"
+            >↗</a
+          >
+        </div>
+        <div class="project-card reveal">
+          <div class="card-num">PROJECT 03</div>
+          <h3>Hospital No-Show Predictor</h3>
+          <p>
+            ML system on 110K+ patient records. AUC-ROC 0.751, 79.2% recall.
+            Deployed on AWS EB with Docker + GitHub Actions CI/CD.
+          </p>
+          <div class="project-tags">
+            <span>XGBoost</span><span>Optuna</span><span>MLflow</span
+            ><span>Docker</span><span>AWS EB</span>
+          </div>
+          <a
+            href="https://github.com/bsse23110/Dictator-s-code"
+            target="_blank"
+            class="project-link"
+            >↗</a
+          >
+        </div>
+      </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- ═══════ ABOUT ═══════ -->
+    <section class="section" id="about">
+      <div class="section-header reveal">
+        <span class="section-num">02</span>
+        <h2 class="section-title">About</h2>
+      </div>
+      <div class="about-content">
+        <div class="about-text reveal">
+          <p>
+            Final-year Software Engineering student at
+            <span class="highlight">ITU Lahore</span>. Self-taught in ML
+            (Aurélien Géron) and software craft (Clean Code).
+          </p>
+          <p>
+            I care about things that <span class="highlight">ship</span> and
+            feel intentional. Every project starts with a sketch, ends with a
+            deployment pipeline.
+          </p>
+        </div>
+        <div class="about-skills reveal">
+          <div class="skill-item">
+            <div class="skill-name">Frontend</div>
+            <div class="skill-desc">React, Next.js, Three.js, Tailwind</div>
+          </div>
+          <div class="skill-item">
+            <div class="skill-name">Backend</div>
+            <div class="skill-desc">FastAPI, Python, Docker</div>
+          </div>
+          <div class="skill-item">
+            <div class="skill-name">ML / AI</div>
+            <div class="skill-desc">XGBoost, Groq API, Cohere</div>
+          </div>
+          <div class="skill-item">
+            <div class="skill-name">Design</div>
+            <div class="skill-desc">Figma, Framer Motion</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- ═══════ CONTACT ═══════ -->
+    <section class="contact-section" id="contact">
+      <div class="reveal">
+        <h2>Let's build something.</h2>
+        <p>
+          Open to freelance work, collaborations, and interesting conversations.
+        </p>
+        <a href="mailto:arafey.tanwir@gmail.com" class="contact-email"
+          >arafey.tanwir@gmail.com</a
+        >
+        <div class="socials">
+          <a href="https://github.com/arafeytanwir-cloud" target="_blank"
+            >GitHub</a
+          >
+          <a
+            href="https://www.linkedin.com/in/muhammad-r-3a65b72b0/"
+            target="_blank"
+            >LinkedIn</a
+          >
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════ FOOTER ═══════ -->
+    <footer class="footer">
+      <p>RAFEY TANWEER · 2026 · BUILT WITH CURSOR & CAFFEINE</p>
+    </footer>
+
+    <script>
+      // ═══════════════════════════════════════════════════════
+      // PARTICLE NETWORK BACKGROUND
+      // ═══════════════════════════════════════════════════════
+      const canvas = document.getElementById("bg");
+      const ctx = canvas.getContext("2d");
+      let W,
+        H,
+        particles = [],
+        mouse = { x: 0, y: 0 };
+
+      function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener("resize", resize);
+
+      class Particle {
+        constructor() {
+          this.x = Math.random() * W;
+          this.y = Math.random() * H;
+          this.vx = (Math.random() - 0.5) * 0.3;
+          this.vy = (Math.random() - 0.5) * 0.3;
+          this.size = Math.random() * 1.5 + 0.5;
+          this.baseAlpha = Math.random() * 0.3 + 0.1;
+        }
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+          if (this.x < 0 || this.x > W) this.vx *= -1;
+          if (this.y < 0 || this.y > H) this.vy *= -1;
+
+          // mouse repulsion
+          const dx = this.x - mouse.x;
+          const dy = this.y - mouse.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 150) {
+            const force = (150 - dist) / 150;
+            this.vx += (dx / dist) * force * 0.5;
+            this.vy += (dy / dist) * force * 0.5;
+          }
+          // dampen
+          this.vx *= 0.99;
+          this.vy *= 0.99;
+        }
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(200,240,74,${this.baseAlpha})`;
+          ctx.fill();
+        }
+      }
+
+      // create particles
+      for (let i = 0; i < 80; i++) particles.push(new Particle());
+
+      function drawLines() {
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 180) {
+              const alpha = (1 - dist / 180) * 0.08;
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.strokeStyle = `rgba(200,240,74,${alpha})`;
+              ctx.lineWidth = 0.5;
+              ctx.stroke();
+            }
+          }
+          // mouse connection
+          const dx = particles[i].x - mouse.x;
+          const dy = particles[i].y - mouse.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 200) {
+            const alpha = (1 - dist / 200) * 0.15;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(mouse.x, mouse.y);
+            ctx.strokeStyle = `rgba(200,240,74,${alpha})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, W, H);
+        particles.forEach((p) => {
+          p.update();
+          p.draw();
+        });
+        drawLines();
+        requestAnimationFrame(animate);
+      }
+      animate();
+
+      window.addEventListener("mousemove", (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+
+      // ═══════════════════════════════════════════════════════
+      // SCROLL REVEAL
+      // ═══════════════════════════════════════════════════════
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("visible");
+            }
+          });
+        },
+        { threshold: 0.1 },
+      );
+
+      document
+        .querySelectorAll(".reveal")
+        .forEach((el) => observer.observe(el));
+    </script>
+  </body>
+</html>
